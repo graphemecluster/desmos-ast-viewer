@@ -28,6 +28,9 @@ module.exports = {
       },
     ],
   },
+  externals: {
+    desmos: "Desmos",
+  },
   devServer: {
     contentBase: output,
     watchContentBase: true,

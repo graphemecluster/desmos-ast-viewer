@@ -4,11 +4,41 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Desmos Parser</title>
+    <script src="https://www.desmos.com/api/v1.7/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6" defer></script>
   </head>
   <body>
     <div id="container">
       <div id="calculator"></div>
       <div id="output">9</div>
+      <div id="tree">
+        <ul>
+          <li>
+            <div>=</div>
+            <ul>
+              <li>
+                <div>+</div>
+                <ul>
+                  <li>
+                    <div>^</div>
+                    <ul>
+                      <li><div>x</div></li>
+                      <li><div>2</div></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <div>^</div>
+                    <ul>
+                      <li><div>y</div></li>
+                      <li><div>2</div></li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+              <li><div>10</div></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
     </div>
   </body>
 </html>

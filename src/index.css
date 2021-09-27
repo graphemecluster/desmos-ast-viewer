@@ -1,3 +1,10 @@
+body {
+  font-family: sans-serif;
+  overflow-y: scroll;
+}
+sub {
+  font-size: 60%;
+}
 #container {
   margin: auto;
   max-width: 1200px;
@@ -10,5 +17,70 @@
   color: red;
   font-size: 48px;
   text-align: center;
-  margin-top: 6px;
+  margin: 6px 0 3px;
+}
+#tree {
+  font-size: 32px;
+  color: #0b6ba1;
+  text-align: center;
+  border: 2px solid #ccc;
+  overflow-x: scroll;
+}
+#tree:empty {
+  display: none;
+}
+#tree ul {
+  display: flex;
+  padding: 0;
+}
+#tree > ul {
+  display: inline-flex;
+}
+#tree li {
+  display: block;
+  position: relative;
+}
+#tree li:before {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #54bbf7;
+}
+#tree li:first-child:before {
+  left: 50%;
+}
+#tree li:last-child:before {
+  right: 50%;
+}
+#tree div {
+  display: inline-block;
+  position: relative;
+  width: 100px;
+  height: 100px;
+  background-color: #caf0ff;
+  border: 1px solid #54bbf7;
+  border-radius: 50px;
+  line-height: 100px;
+  margin: 20px;
+}
+#tree div:before {
+  content: "";
+  display: block;
+  position: absolute;
+  top: -21px;
+  left: 49px;
+  bottom: -21px;
+  right: 49px;
+  background-color: #54bbf7;
+  z-index: -1;
+}
+#tree > ul > li > div:before {
+  top: 0;
+}
+#tree div:only-child:before {
+  bottom: 0;
 }
