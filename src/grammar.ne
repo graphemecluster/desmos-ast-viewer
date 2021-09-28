@@ -2,7 +2,7 @@
 const moo = require("moo");
 const lexer = moo.compile({
   _: /\\? /,
-  number: /(?:\d|\\? )+(?:\.(?:\d|\\? )*)?|\.(?:\d|\\? )+/,
+  number: /(?:\d|\\? )+(?:\.(?!\.\.)(?:\d|\\? )*)?|\.(?:\d|\\? )+/,
   trig: /\\(?:arc?)?(?:sin|cos|tan|csc|sec|cot)h?(?![A-Za-z])|\\operatorname{(?:arc?)?(?:sin|cos|tan|csc|sec|cot)h?}/,
   op0: /=|[<>]=?|~|\\(?:[lg]eq?|sim)(?![A-Za-z])/,
   op1: /[+-]/,
@@ -11,6 +11,7 @@ const lexer = moo.compile({
   reserved: /\\(?:frac|sqrt|log|ln|left|right|int|sum|prod)(?![A-Za-z])/,
   percent: /\\%\\operatorname{of}/,
   defined: /\\operatorname{ans}|\\(?:[A-Za-z]+|{|})|[A-Za-z]/,
+  ellipsis: /\.{3}/,
   other: /./,
 });
 lexer.next = (next => () => {
@@ -57,7 +58,8 @@ integral -> "\\int" sub sup term "d" var {% t("integral", 5, 1, 2, 3) %}
 accum -> ("\\sum" | "\\prod") "_" "{" var "=" expr "}" sup term {% t(0, 3, 5, 7, 8) %}
 factorial -> term "!" {% t("factorial", 0) %}
 percent -> term %percent term {% t("percent", 0, 2) %}
-list -> "[" args:? "]" {% t("list", 1) %} | "\\left" "[" args:? "\\right" "]" {% t("list", 2) %}
+list -> "[" listargs:? "]" {% t("list", 1) %} | "\\left" "[" listargs:? "\\right" "]" {% t("list", 2) %}
+listargs -> args | args ",":? %ellipsis ",":? args {% s(0, 2, 4) %}
 piecewisearg -> stmt {% t("condition", 0) %} | stmt ":" expr {% t("condition", 0, 2) %}
 piecewiseargs -> piecewisearg | piecewiseargs "," piecewisearg {% s(0, 2) %}
 otherwise ->  "," expr {% t("condition", 1) %}

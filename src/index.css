@@ -1,12 +1,28 @@
 body {
   font-family: sans-serif;
   overflow-y: scroll;
+  margin: 0;
+}
+h1 {
+  font-size: 2.25em;
+  margin: 0;
+}
+p {
+  font-size: 1.25em;
+  margin: 1em 0 1.25em;
+}
+a {
+  text-decoration: gray dotted underline;
+}
+a:hover,
+a:focus {
+  opacity: 0.75;
 }
 sub {
   font-size: 60%;
 }
 #container {
-  margin: auto;
+  margin: 24px auto;
   max-width: 1200px;
 }
 #calculator {
@@ -15,12 +31,12 @@ sub {
 }
 #output {
   color: red;
-  font-size: 48px;
+  font-size: 3em;
   text-align: center;
   margin: 6px 0 3px;
 }
 #tree {
-  font-size: 32px;
+  font-size: 2em;
   color: #0b6ba1;
   text-align: center;
   border: 2px solid #ccc;
