@@ -1,0 +1,3 @@
+[submodule "DesModder"]
+	path = DesModder
+	url = https://github.com/DesModder/DesModder

@@ -29,7 +29,7 @@ sub {
   width: 100%;
   height: 600px;
 }
-#output {
+#count {
   color: red;
   font-size: 3em;
   text-align: center;
@@ -99,4 +99,47 @@ sub {
 }
 #tree div:only-child:before {
   bottom: 0;
+}
+#tree li > span {
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+#tree li > span:before {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: calc(50% - 1px);
+  bottom: 0;
+  width: 2px;
+  background-color: #54bbf7;
+}
+#tree > ul > li > span:before {
+  top: 50%;
+}
+#tree li > span > div:before {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 49px;
+  left: -21px;
+  right: -21px;
+  height: 2px;
+  background-color: #54bbf7;
+}
+#tree li > span > div:first-child:before {
+  left: 50%;
+}
+#tree li > span > div:last-child:before {
+  right: 50%;
+}
+.fraction {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 40px;
+  vertical-align: middle;
+}
+.fraction span:first-child {
+  border-bottom: 2px solid #0b6ba1;
 }
