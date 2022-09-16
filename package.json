@@ -1,6 +1,6 @@
 {
   "name": "desmos-ast-viewer",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "View the AST of a Desmos mathematical expression.",
   "scripts": {
     "start": "parcel src/index.html --dist-dir build --open --port 3000",

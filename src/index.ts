@@ -2,7 +2,7 @@ import type { desmosRequire } from "../DesModder/src/globals/window";
 import type { parseDesmosLatexRaw } from "../DesModder/src/utils/depUtils";
 import type Node from "../DesModder/src/parsing/parsenode";
 import type { ChildExprNode, Divide, Error, FunctionCall, Identifier } from "../DesModder/src/parsing/parsenode";
-import { flatten, tryDecode, unflatten } from "./utils";
+import { flatten, fromDecoded, tryDecode, unflatten } from "./utils";
 
 declare global {
   namespace Desmos {
@@ -155,8 +155,25 @@ function constantToFraction(
   return isNaN(value as number) ? "undefined" : value + "";
 }
 
+const ListViewPrototype = Desmos.require("expressions/list-view").default.prototype;
+const getClipboardData = Desmos.require("lib/get-clipboard-data").default;
+
+let prevPathname: string;
+const oldOnPaste = ListViewPrototype.onPaste;
+ListViewPrototype.onPaste = function (e: ClipboardEvent) {
+  prevPathname = getClipboardData(e);
+  oldOnPaste.call(this, e);
+};
+
 const parse = Desmos.require("parser").parse as typeof parseDesmosLatexRaw;
-const calc = Desmos.GraphingCalculator(document.getElementById("calculator")!, { pasteGraphLink: true });
+const calc = Desmos.GraphingCalculator(document.getElementById("calculator")!, {
+  pasteGraphLink: true,
+  pasteGraphLinkCallback(s: unknown, t: Function) {
+    t(null, s);
+    const match = /^\s*https?:\/\/(?:[a-zA-Z0-9]*\.)?desmos\.com(?::[0-9]+)?\/calculator\/(.+?)\s*$/.exec(prevPathname);
+    if (match) history.replaceState(s, document.title, "/desmos-ast-viewer/" + match[1]);
+  },
+} as any);
 self.Calc = calc;
 
 calc.focusFirstExpression();
@@ -166,7 +183,7 @@ defaultExpressionState.delete("color");
 
 if (
   !(() => {
-    const pathname = tryDecode(location.pathname.replace(/^\/desmos-ast-viewer\/?/, ""));
+    const pathname = location.pathname.replace(/^\/desmos-ast-viewer\/?/, "");
     if (pathname) {
       Desmos.require("main/load-graph-from-link").default(
         (calc as any).controller,
@@ -189,7 +206,7 @@ if (
       }
     if (params.has("latex"))
       try {
-        calc.setExpression(unflatten(params.entries(), x => JSON.parse(tryDecode(x))));
+        calc.setExpression(unflatten(params.entries(), x => fromDecoded(tryDecode(x))));
         return true;
       } catch {
         return false;
@@ -207,7 +224,7 @@ function isExpression(
 function makeParams(exp: Desmos.ExpressionState) {
   const params = new URLSearchParams();
   flatten(exp, (key, value) => {
-    if (defaultExpressionState.get(key) !== value) params.set(key, JSON.stringify(value));
+    if (defaultExpressionState.get(key) !== value) params.set(key, value);
   });
   params.delete("type");
   params.delete("id");

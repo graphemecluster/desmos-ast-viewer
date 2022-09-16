@@ -28,3 +28,7 @@ export function tryDecode(str: string) {
     return str;
   }
 }
+
+export function fromDecoded(str: string) {
+  return str === "true" ? true : str === "false" ? false : +str === +str ? +str : str;
+}
