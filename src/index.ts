@@ -2,6 +2,7 @@ import type { desmosRequire } from "../DesModder/src/globals/window";
 import type { parseDesmosLatexRaw } from "../DesModder/src/utils/depUtils";
 import type Node from "../DesModder/src/parsing/parsenode";
 import type { ChildExprNode, Divide, Error, FunctionCall, Identifier } from "../DesModder/src/parsing/parsenode";
+import { flatten, tryDecode, unflatten } from "./utils";
 
 declare global {
   namespace Desmos {
@@ -9,6 +10,7 @@ declare global {
   }
   interface Window {
     Desmos: typeof Desmos;
+    Calc: Desmos.Calculator;
   }
 }
 
@@ -155,7 +157,78 @@ function constantToFraction(
 
 const parse = Desmos.require("parser").parse as typeof parseDesmosLatexRaw;
 const calc = Desmos.GraphingCalculator(document.getElementById("calculator")!, { pasteGraphLink: true });
-calc.setExpression({ latex: "x^{2}+y^{2}=10" });
+self.Calc = calc;
+
+calc.focusFirstExpression();
+const defaultExpressionState = new Map();
+flatten(calc.getExpressions()[0]!, (key, value) => defaultExpressionState.set(key, value));
+defaultExpressionState.delete("color");
+
+if (
+  !(() => {
+    const pathname = tryDecode(location.pathname.replace(/^\/desmos-ast-viewer\/?/, ""));
+    if (pathname) {
+      Desmos.require("main/load-graph-from-link").default(
+        (calc as any).controller,
+        "https://www.desmos.com/calculator/" + pathname,
+        (s: unknown, t: Function) => {
+          t(null, s);
+          history.replaceState(s, document.title, "/desmos-ast-viewer/" + pathname);
+        }
+      );
+      return true;
+    }
+    const params = new URLSearchParams(location.search);
+    const state = params.get("state");
+    if (state)
+      try {
+        calc.setState(tryDecode(state));
+        return true;
+      } catch {
+        return false;
+      }
+    if (params.has("latex"))
+      try {
+        calc.setExpression(unflatten(params.entries(), x => JSON.parse(tryDecode(x))));
+        return true;
+      } catch {
+        return false;
+      }
+  })()
+)
+  calc.setExpression({ latex: "x^{2}+y^{2}=10" });
+
+function isExpression(
+  exp: Desmos.ExpressionState
+): exp is Exclude<Desmos.ExpressionState, { type: "table" }> & { latex: string } {
+  return (exp as any).latex;
+}
+
+function makeParams(exp: Desmos.ExpressionState) {
+  const params = new URLSearchParams();
+  flatten(exp, (key, value) => {
+    if (defaultExpressionState.get(key) !== value) params.set(key, JSON.stringify(value));
+  });
+  params.delete("type");
+  params.delete("id");
+  params.delete("hidden");
+  params.delete("secret");
+  return params;
+}
+
+calc.observeEvent("change", () => {
+  const state = calc.getState();
+  const expressions = calc.getExpressions().filter(isExpression); // (state as { expressions: { list: Desmos.ExpressionState[] } }).expressions.list
+  history.replaceState(
+    state,
+    document.title,
+    !expressions.length
+      ? "/desmos-ast-viewer/"
+      : expressions.length === 1
+      ? "/desmos-ast-viewer/?" + makeParams(expressions[0]!)
+      : "/desmos-ast-viewer/?state=" + encodeURIComponent(JSON.stringify(state))
+  );
+});
 
 const count = document.getElementById("count")!;
 const tree = document.getElementById("tree")!;
@@ -163,9 +236,7 @@ calc.observeEvent("change", onChange);
 onChange();
 
 function onChange() {
-  const exp = calc
-    .getExpressions()
-    .find((exp): exp is Exclude<Desmos.ExpressionState, { type: "table" }> & { latex: string } => (exp as any).latex);
+  const exp = calc.getExpressions().find(isExpression);
   if (!exp) return onError();
   tree.textContent = "";
   const ul = document.createElement("ul");

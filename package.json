@@ -1,6 +1,6 @@
 {
   "name": "desmos-ast-viewer",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "View the AST of a Desmos mathematical expression.",
   "scripts": {
     "start": "parcel src/index.html --dist-dir build --open --port 3000",
@@ -8,11 +8,7 @@
     "deploy": "gh-pages -d build"
   },
   "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
+    "production": ">0.2% and not dead and supports es6-module",
     "development": [
       "last 1 chrome version",
       "last 1 firefox version",
