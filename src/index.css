@@ -82,6 +82,7 @@ sub {
   border-radius: 50px;
   line-height: 100px;
   margin: 20px;
+  white-space: nowrap;
 }
 #tree div:before {
   content: "";

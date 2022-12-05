@@ -60,7 +60,7 @@ const display: {
   },
   "Exponent": "^",
   "Negative": node => {
-    if (node.args[0].type === "Identifier" && node.args[0]._symbol === "infty") return "-infty";
+    if (node.args[0].type === "Identifier" && node.args[0]._symbol === "infty") return "-∞";
     if (node.args[0].type !== "Divide") return "-";
     const fraction = toFraction(node.args[0]);
     return fraction ? constantToFraction({ _constantValue: fraction }, true) : "-";
@@ -87,6 +87,7 @@ const display: {
 
 function symbolToElement(node: Node & { _symbol: string }) {
   if (node._symbol === "factorial") return "!";
+  if (node._symbol === "infty") return "∞";
   const [lhs, rhs] = node._symbol.split("_");
   if (rhs) {
     const fragment = document.createDocumentFragment();
@@ -103,15 +104,19 @@ function constantToFraction(
   node: { _constantValue: boolean | number | { n: string | number; d: string | number } },
   negate = false
 ) {
-  const value = node._constantValue;
-  if (typeof value === "object") {
+  let value = node._constantValue;
+  if (typeof value === "object" && 1 / +value.n && 1 / +value.d) {
     let n = value.n + "";
     let d = value.d + "";
-    const sign = ((n[0] === "-") === (d[0] === "-")) !== negate;
+    const sign =
+      ((value.n ? n[0] === "-" : 1 / +value.n === -Infinity) ===
+        (value.d ? d[0] === "-" : 1 / +value.d === -Infinity)) !==
+      negate;
     n = n.replace(/^-/, "");
     d = d.replace(/^-/, "");
+    if (n === d) return sign ? "1" : "-1";
     if (d === "1") return (sign ? "" : "-") + n;
-    if (d === "0") return n === "0" ? "undefined" : (sign ? "" : "-") + "infty";
+    if (d === "0") return n === "0" ? "NaN" : sign ? "∞" : "-∞";
     if (!n.includes("e") && !d.includes("e")) {
       let diff = 0;
       let v = +d;
@@ -135,6 +140,10 @@ function constantToFraction(
           ).replace(/\.?0+$/, "")
         );
       }
+      const c = gcd(+n, +d);
+      n = +n / c + "";
+      d = +d / c + "";
+      if (d === "1") return (sign ? "" : "-") + n;
     }
     const fraction = document.createElement("span");
     fraction.className = "fraction";
@@ -152,7 +161,11 @@ function constantToFraction(
     }
     return fraction;
   }
-  return isNaN(value as number) ? "undefined" : value + "";
+  if (typeof value === "object")
+    value =
+      (value.n === "∞" ? Infinity : value.n === "-∞" ? -Infinity : +value.n) /
+      (value.d === "∞" ? Infinity : value.d === "-∞" ? -Infinity : +value.d);
+  return value === Infinity ? "∞" : value === -Infinity ? "-∞" : value + "";
 }
 
 const ListViewPrototype = Desmos.require("expressions/list-view").default.prototype;
@@ -165,13 +178,14 @@ ListViewPrototype.onPaste = function (e: ClipboardEvent) {
   oldOnPaste.call(this, e);
 };
 
-const parse = Desmos.require("parser").parse as typeof parseDesmosLatexRaw;
+const { title } = document;
+const parse: typeof parseDesmosLatexRaw = Desmos.require("parser").parse;
 const calc = Desmos.GraphingCalculator(document.getElementById("calculator")!, {
   pasteGraphLink: true,
-  pasteGraphLinkCallback(s: unknown, t: Function) {
-    t(null, s);
+  pasteGraphLinkCallback(state: unknown, callback: Function) {
+    callback(null, state);
     const match = /^\s*https?:\/\/(?:[a-zA-Z0-9]*\.)?desmos\.com(?::[0-9]+)?\/calculator\/(.+?)\s*$/.exec(prevPathname);
-    if (match) history.replaceState(s, document.title, "/desmos-ast-viewer/" + match[1]);
+    if (match) history.replaceState(state, title, "/desmos-ast-viewer/" + match[1]);
   },
 } as any);
 self.Calc = calc;
@@ -183,14 +197,16 @@ defaultExpressionState.delete("color");
 
 if (
   !(() => {
-    const pathname = location.pathname.replace(/^\/desmos-ast-viewer\/?/, "");
-    if (pathname) {
+    const { hash } = location;
+    if (hash.startsWith("#/")) {
+      const pathname = hash.slice(2, -hash.endsWith("/") || undefined);
+      history.replaceState(calc.getState(), title, "/desmos-ast-viewer/" + pathname);
       Desmos.require("main/load-graph-from-link").default(
         (calc as any).controller,
         "https://www.desmos.com/calculator/" + pathname,
-        (s: unknown, t: Function) => {
-          t(null, s);
-          history.replaceState(s, document.title, "/desmos-ast-viewer/" + pathname);
+        (state: unknown, callback: Function) => {
+          callback(null, state);
+          history.replaceState(state, title, "/desmos-ast-viewer/" + pathname);
         }
       );
       return true;
@@ -214,6 +230,7 @@ if (
   })()
 )
   calc.setExpression({ latex: "x^{2}+y^{2}=10" });
+history.replaceState(calc.getState(), title);
 
 function isExpression(
   exp: Desmos.ExpressionState
@@ -238,7 +255,7 @@ calc.observeEvent("change", () => {
   const expressions = calc.getExpressions().filter(isExpression); // (state as { expressions: { list: Desmos.ExpressionState[] } }).expressions.list
   history.replaceState(
     state,
-    document.title,
+    title,
     !expressions.length
       ? "/desmos-ast-viewer/"
       : expressions.length === 1
@@ -345,4 +362,8 @@ function toFraction(node: Divide) {
     )
       return { n, d };
   }
+}
+
+function gcd(a: number, b: number): number {
+  return b ? gcd(b, a % b) : a;
 }
